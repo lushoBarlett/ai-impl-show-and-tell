@@ -1,13 +1,59 @@
 let simulation;
+let maze;
+let agent;
+
+let autoplay = false;
+let totalSteps = 0;
+let currentSteps = 0;
 
 function setup() {
   simulation = new Simulation();
-  simulation.addEntity(new Maze(20, 20, 200));
+
+  maze = new Maze(20, 20, 300);
+
+  const randomStart = {
+    x: Math.floor(random(0, maze.width)),
+    y: Math.floor(random(0, maze.height)),
+  };
+
+  const randomEnd = {
+    x: Math.floor(random(0, maze.width)),
+    y: Math.floor(random(0, maze.height)),
+  };
+
+  agent = new MazeAgent(maze, randomStart, randomEnd);
+
+  simulation.addEntity(agent);
+  simulation.addEntity(maze); // draw maze after agent
+}
+
+function keyReleased() {
+  if (key === ' ')
+    autoplay = !autoplay;
+
+  if (key === "ArrowRight" && !autoplay)
+    totalSteps++;
 }
 
 function draw() {
   simulation.flipY();
   simulation.update();
+
+  if (autoplay)
+    totalSteps++;
+
+  if (currentSteps < totalSteps) {
+
+    if (agent.isSolvable()) {
+      agent.solved() || agent.solve();
+      agent.pathEnded() || agent.followPath();
+    } else {
+      agent.think();
+    }
+
+    currentSteps++;
+  }
+
   simulation.render();
 }
 

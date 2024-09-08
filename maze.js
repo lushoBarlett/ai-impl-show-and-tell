@@ -28,12 +28,12 @@ class Maze extends Entity {
   // because there's a wall there. So we have (p, DIR) as our representation
   //
   // The valid points are from (0, 0) to (width - 1, height - 1)
-  // To prevent duplicates and to facilitate things, only down and left
+  // To prevent duplicates and to facilitate things, only up and right
   // directions can be used.
   generateRandomWalls(n) {
     this.walls = [];
 
-    const CHOOSEDIR = ['DOWN', 'LEFT'];
+    const CHOOSEDIR = ['UP', 'RIGHT'];
 
     for (let i = 0; i < n; i++) {
 
@@ -44,25 +44,25 @@ class Maze extends Entity {
 
         dir = CHOOSEDIR[floor(random(2))];
 
-      } while (outOfBounds(p, dir, this.width, this.height) || chosen(this.walls, p, dir));
+      } while (this.outOfBounds(p, dir) || this.chosen(p, dir));
 
       this.walls.push({ p, dir });
     }
 
     return this.walls;
+  }
 
-    function outOfBounds(p, dir, width, height) {
-      return (
-        dir === 'UP' && p.y === height - 1 ||
-        dir === 'DOWN' && p.y === 0 ||
-        dir === 'LEFT' && p.x === 0 ||
-        dir === 'RIGHT' && p.x === width - 1
-      );
-    }
+  outOfBounds(p, dir) {
+    return (
+      dir === 'UP' && p.y === this.height - 1 ||
+      dir === 'DOWN' && p.y === 0 ||
+      dir === 'LEFT' && p.x === 0 ||
+      dir === 'RIGHT' && p.x === this.width - 1
+    );
+  }
 
-    function chosen(walls, p, dir) {
-      return walls.some(({ p: pc, dir: dirc }) => pc.x == p.x && pc.y == p.y && dirc == dir);
-    }
+  chosen(p, dir) {
+    return this.walls.some(({ p: pc, dir: dirc }) => pc.x === p.x && pc.y === p.y && dirc === dir);
   }
 
   // to render the walls, a line between p1 and p2 is drawn
@@ -132,5 +132,32 @@ class Maze extends Entity {
     }
 
     pop();
+  }
+
+  drawBoundingBox({ x, y }) {
+    rect(
+      this.transform.x + x * Maze.PointSize,
+      this.transform.y + y * Maze.PointSize,
+      Maze.PointSize,
+      Maze.PointSize
+    );
+  }
+
+  neighbors({ x, y }) {
+    const n = [];
+
+    if (!this.outOfBounds({ x, y }, 'UP') && !this.chosen({ x, y }, 'UP'))
+      n.push({ x, y: y + 1 });
+
+    if (!this.outOfBounds({ x, y }, 'DOWN') && !this.chosen({ x, y: y - 1 }, 'UP')) // compare walls with UP instead of DOWN
+      n.push({ x, y: y - 1 });
+
+    if (!this.outOfBounds({ x, y }, 'LEFT') && !this.chosen({ x: x - 1, y }, 'RIGHT')) // compare walls with RIGHT instead of LEFT
+      n.push({ x: x - 1, y });
+
+    if (!this.outOfBounds({ x, y }, 'RIGHT') && !this.chosen({ x, y }, 'RIGHT'))
+      n.push({ x: x + 1, y });
+
+    return n;
   }
 }
