@@ -1,6 +1,7 @@
 class Maze extends Entity {
 
   static PointSize = 50;
+  static StrokeWeight = 5;
 
   constructor(w, h, n) {
     // center the maze on the screen
@@ -78,7 +79,7 @@ class Maze extends Entity {
     push();
 
     stroke(0);
-    strokeWeight(5);
+    strokeWeight(Maze.StrokeWeight);
 
     line(
       this.transform.x, this.transform.y,

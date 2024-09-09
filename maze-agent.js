@@ -5,22 +5,87 @@ class Cell extends Transform {
   }
 }
 
+class Strategy {
+  constructor() {
+    this.queue = [];
+  }
+
+  push(_cell) {}
+  pop() {}
+
+  ended() {
+    return this.queue.length === 0;
+  }
+
+  has(cell) {
+    return this.queue.some(c => c.x === cell.x && c.y === cell.y);
+  }
+}
+
+class BFS extends Strategy {
+  push(cell) {
+    this.queue.push(cell);
+  }
+
+  pop() {
+    return this.queue.shift();
+  }
+}
+
+class DFS extends Strategy {
+  push(cell) {
+    this.queue.push(cell);
+  }
+
+  pop() {
+    return this.queue.pop();
+  }
+}
+
+class AStar extends Strategy {
+  constructor(end) {
+    super();
+    this.end = end;
+  }
+
+  push(cell) {
+    this.queue.push(cell);
+  }
+
+  // cost = g(n) + h(n) = largo del camino recorrido + distancia manhattan al destino
+  cost(cell) {
+    return Math.abs(cell.x - this.end.x) + Math.abs(cell.y - this.end.y);
+  }
+
+  pop() {
+    let minCell = this.queue[0];
+
+    for (const cell of this.queue)
+      if (this.cost(cell) < this.cost(minCell))
+        minCell = cell;
+
+    this.queue = this.queue.filter(c => c !== minCell);
+
+    return minCell;
+  }
+}
+
 class MazeAgent extends Entity {
 
-  constructor(maze, start, end, strategy = 'BFS') {
+  constructor(maze, start, end, strategy = null) {
     super(new Transform(
       start.x * Maze.PointSize + maze.transform.x,
       start.y * Maze.PointSize + maze.transform.y
     ));
 
     this.maze = maze;
-    this.strategy = strategy;
+    this.strategy = strategy || new BFS();
     this.start = start;
     this.end = end;
 
     const startCell = new Cell(start.x, start.y, null);
 
-    this.queue = [startCell];
+    this.strategy.push(startCell);
     this.visitArray = [];
     this.path = null;
     this.pathIndex = 0;
@@ -30,30 +95,16 @@ class MazeAgent extends Entity {
     if (this.isImpossible())
       throw new Error('No path to destination');
 
-    if (this.queue.length === 0)
+    if (this.strategy.ended())
       return;
 
-    const c = this.popQueue();
+    const c = this.strategy.pop();
 
     this.visit(c);
 
-    this.maze.neighbors(c).filter(n => !this.visited(n) && !this.inQueue(n)).forEach(n => {
-      this.pushQueue(new Cell(n.x, n.y, c));
+    this.maze.neighbors(c).filter(n => !this.visited(n) && !this.strategy.has(n)).forEach(n => {
+      this.strategy.push(new Cell(n.x, n.y, c));
     });
-  }
-
-  pushQueue(c) {
-    // TODO: implement strategy
-    this.queue.push(c);
-  }
-
-  popQueue() {
-    // TODO: implement strategy
-    return this.queue.shift();
-  }
-
-  inQueue(c) {
-    return this.queue.some(q => q.x === c.x && q.y === c.y);
   }
 
   visit(c) {
@@ -90,7 +141,7 @@ class MazeAgent extends Entity {
   }
 
   isImpossible() {
-    return this.queue.length === 0 && !this.isSolvable();
+    return this.strategy.ended() && !this.isSolvable();
   }
 
   solved() {
@@ -115,7 +166,7 @@ class MazeAgent extends Entity {
     // render the thinking blocks (cells currently in the queue)
     noStroke();
     fill(255, 0, 0, 100);
-    this.queue.forEach(c => this.maze.drawBoundingBox(c));
+    this.strategy.queue.forEach(c => this.maze.drawBoundingBox(c));
 
     // render the visited blocks
     fill(0, 255, 0, 100);
