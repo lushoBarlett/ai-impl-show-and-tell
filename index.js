@@ -6,25 +6,70 @@ let autoplay = false;
 let totalSteps = 0;
 let currentSteps = 0;
 
-function setup() {
+let scene;
+let plotScene;
+
+function setup(s = 'plot') {
+  scene = s;
   simulation = new Simulation();
 
-  maze = new Maze(20, 20, 300);
+  if (scene === 'maze') {
+    maze = new Maze(20, 20, 300);
 
-  const randomStart = {
-    x: Math.floor(random(0, maze.width)),
-    y: Math.floor(random(0, maze.height)),
-  };
+    const randomStart = {
+      x: Math.floor(random(0, maze.width)),
+      y: Math.floor(random(0, maze.height)),
+    };
 
-  const randomEnd = {
-    x: Math.floor(random(0, maze.width)),
-    y: Math.floor(random(0, maze.height)),
-  };
+    const randomEnd = {
+      x: Math.floor(random(0, maze.width)),
+      y: Math.floor(random(0, maze.height)),
+    };
 
-  agent = new MazeAgent(maze, randomStart, randomEnd);
+    agent = new MazeAgent(maze, randomStart, randomEnd);
 
-  simulation.addEntity(agent);
-  simulation.addEntity(maze); // draw maze after agent
+    simulation.addEntity(agent);
+    simulation.addEntity(maze); // draw maze after agent
+  }
+
+  if (scene === 'plot') {
+    const dimensions = {
+      xstart: 0,
+      xend: 100,
+      ystart: 0,
+      yend: 100,
+    };
+
+    const approximate = linear(Math.random() - 0.5, 50);
+    const error = disc(Math.random() * 10);
+    const dataPoints = new DataPoints(approximate, error, 1000, dimensions);
+
+    const linearPlot = new Linear(dataPoints, new Material(color(255, 0, 0)), 0, 0);
+
+    simulation.addEntity(dataPoints);
+    simulation.addEntity(linearPlot);
+
+    const e = new Entity(new Transform(0, 0));
+    e.render = function() {
+      push();
+
+      textSize(50);
+      fill('black');
+      strokeWeight(1);
+      textAlign(CENTER, CENTER);
+      simulation.flipY();
+      text(`Cost: ${Math.round(plotScene.linearPlot.cost())}`, width / 2, 50);
+      text(`h = ${linearPlot.h.toString(4)}, m = ${linearPlot.m.toString(4)}`, width / 2, 100);
+
+      pop();
+    }
+    simulation.addEntity(e);
+
+    plotScene = {
+      dataPoints,
+      linearPlot,
+    };
+  }
 }
 
 function keyReleased() {
@@ -33,25 +78,37 @@ function keyReleased() {
 
   if (key === "ArrowRight" && !autoplay)
     totalSteps++;
+
+  if (key === "1")
+    setup('maze');
+
+  if (key === "2")
+    setup('plot');
 }
 
 function draw() {
   simulation.flipY();
   simulation.update();
 
-  if (autoplay)
-    totalSteps++;
+  switch (scene) {
 
-  if (currentSteps < totalSteps) {
+    case 'maze':
+      if (autoplay)
+        totalSteps++;
 
-    if (agent.isSolvable()) {
-      agent.solved() || agent.solve();
-      agent.pathEnded() || agent.followPath();
-    } else {
-      agent.think();
-    }
+      if (currentSteps < totalSteps) {
 
-    currentSteps++;
+        if (agent.isSolvable()) {
+          agent.solved() || agent.solve();
+          agent.pathEnded() || agent.followPath();
+        } else {
+          agent.think();
+        }
+
+        currentSteps++;
+      }
+      break;
+
   }
 
   simulation.render();
@@ -59,6 +116,10 @@ function draw() {
 
 function gizmo(x, y) {
   const e = new Entity(new Transform(x, y));
+
+  e.update = function() {
+    console.log(this.transform.x, this.transform.y);
+  }
 
   e.render = function() {
     push();

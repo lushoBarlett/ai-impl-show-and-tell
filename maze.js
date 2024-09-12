@@ -4,11 +4,7 @@ class Maze extends Entity {
   static StrokeWeight = 5;
 
   constructor(w, h, n) {
-    // center the maze on the screen
-    super(new Transform(
-      (width - w * Maze.PointSize) / 2,
-      (height - h * Maze.PointSize) / 2
-    ));
+    super(Transform.bottomLeftCenterPoint(w * Maze.PointSize, h * Maze.PointSize));
 
     this.width = w;
     this.height = h;
