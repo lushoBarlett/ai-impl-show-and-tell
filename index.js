@@ -9,7 +9,16 @@ let currentSteps = 0;
 let scene;
 let plotScene;
 
-function setup(s = 'plot') {
+let nn;
+
+const trainingData = [
+  { inputs: [0, 0], outputs: [0], },
+  { inputs: [1, 0], outputs: [1], },
+  { inputs: [0, 1], outputs: [1], },
+  { inputs: [1, 1], outputs: [0], },
+];
+
+function setup(s = 'nn') {
   scene = s;
   simulation = new Simulation();
 
@@ -70,6 +79,11 @@ function setup(s = 'plot') {
       linearPlot,
     };
   }
+
+  if (scene === 'nn') {
+    nn = new NeuralNetwork([2, 2, 1]);
+    simulation.addEntity(nn);
+  }
 }
 
 function keyReleased() {
@@ -109,6 +123,19 @@ function draw() {
       }
       break;
 
+    case 'plot':
+      break;
+
+    case 'nn':
+      if (autoplay)
+        totalSteps++;
+
+      if (currentSteps < totalSteps) {
+        const data = trainingData[currentSteps % trainingData.length];
+        nn.train(data.inputs, data.outputs, 0.1);
+        currentSteps++;
+      }
+      break;
   }
 
   simulation.render();

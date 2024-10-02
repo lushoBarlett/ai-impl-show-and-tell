@@ -77,6 +77,6 @@ class Simulation {
 
   render() {
     this.clear();
-    this.entities.forEach(entity => entity.render());
+    this.entities.forEach(entity => entity.render(this));
   }
 }
