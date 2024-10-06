@@ -81,7 +81,7 @@ function setup(s = 'nn') {
   }
 
   if (scene === 'nn') {
-    nn = new NeuralNetwork([2, 2, 1]);
+    nn = new NeuralNetwork([20, 20, 20, 20, 20]);
     simulation.addEntity(nn);
   }
 }
