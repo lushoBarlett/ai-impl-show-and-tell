@@ -1,9 +1,16 @@
-class Maze extends Entity {
+import { Entity, Transform } from "./objects";
+
+export class Maze extends Entity {
 
   static PointSize = 50;
   static StrokeWeight = 5;
 
-  constructor(w, h, n) {
+  width: number;
+  height: number;
+
+  walls: { p: Transform, dir: string }[] = [];
+
+  constructor(w: number, h: number, n: number) {
     super(Transform.bottomLeftCenterPoint(w * Maze.PointSize, h * Maze.PointSize));
 
     this.width = w;
@@ -27,7 +34,7 @@ class Maze extends Entity {
   // The valid points are from (0, 0) to (width - 1, height - 1)
   // To prevent duplicates and to facilitate things, only up and right
   // directions can be used.
-  generateRandomWalls(n) {
+  generateRandomWalls(n: number) {
     this.walls = [];
 
     const CHOOSEDIR = ['UP', 'RIGHT'];
@@ -49,7 +56,7 @@ class Maze extends Entity {
     return this.walls;
   }
 
-  outOfBounds(p, dir) {
+  outOfBounds(p: { x: number, y: number }, dir: string) {
     return (
       dir === 'UP' && p.y === this.height - 1 ||
       dir === 'DOWN' && p.y === 0 ||
@@ -58,7 +65,7 @@ class Maze extends Entity {
     );
   }
 
-  chosen(p, dir) {
+  chosen(p: { x: number, y: number }, dir: string) {
     return this.walls.some(({ p: pc, dir: dirc }) => pc.x === p.x && pc.y === p.y && dirc === dir);
   }
 
@@ -131,7 +138,7 @@ class Maze extends Entity {
     pop();
   }
 
-  drawBoundingBox({ x, y }) {
+  drawBoundingBox({ x, y }: Transform) {
     rect(
       this.transform.x + x * Maze.PointSize,
       this.transform.y + y * Maze.PointSize,
@@ -140,7 +147,7 @@ class Maze extends Entity {
     );
   }
 
-  neighbors({ x, y }) {
+  neighbors({ x, y }: Transform) {
     const n = [];
 
     if (!this.outOfBounds({ x, y }, 'UP') && !this.chosen({ x, y }, 'UP'))
@@ -158,3 +165,4 @@ class Maze extends Entity {
     return n;
   }
 }
+

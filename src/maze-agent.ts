@@ -1,59 +1,71 @@
-class Cell extends Transform {
-  constructor(x, y, parent = null) {
+import { Maze } from "./maze";
+import { Entity, Transform } from "./objects";
+
+export class Cell extends Transform {
+
+  parent: Cell|null;
+
+  constructor(x: number, y: number, parent: Cell|null = null) {
     super(x, y);
     this.parent = parent;
   }
 }
 
-class Strategy {
+export class Strategy {
+
+  queue: Cell[];
+
   constructor() {
     this.queue = [];
   }
 
-  push(_cell) {}
-  pop() {}
+  push(_cell: Cell) {}
+  pop(): Cell { return new Cell(0, 0); }
 
   ended() {
     return this.queue.length === 0;
   }
 
-  has(cell) {
+  has(cell: { x: number, y: number }) {
     return this.queue.some(c => c.x === cell.x && c.y === cell.y);
   }
 }
 
-class BFS extends Strategy {
-  push(cell) {
+export class BFS extends Strategy {
+  push(cell: Cell) {
     this.queue.push(cell);
   }
 
   pop() {
-    return this.queue.shift();
+    return this.queue.shift()!;
   }
 }
 
-class DFS extends Strategy {
-  push(cell) {
+export class DFS extends Strategy {
+  push(cell: Cell) {
     this.queue.push(cell);
   }
 
   pop() {
-    return this.queue.pop();
+    return this.queue.pop()!;
   }
 }
 
-class AStar extends Strategy {
-  constructor(end) {
+export class AStar extends Strategy {
+
+  end: Cell;
+
+  constructor(end: Cell) {
     super();
     this.end = end;
   }
 
-  push(cell) {
+  push(cell: Cell) {
     this.queue.push(cell);
   }
 
   // cost = g(n) + h(n) = largo del camino recorrido + distancia manhattan al destino
-  cost(cell) {
+  cost(cell: Cell) {
     return Math.abs(cell.x - this.end.x) + Math.abs(cell.y - this.end.y);
   }
 
@@ -70,9 +82,20 @@ class AStar extends Strategy {
   }
 }
 
-class MazeAgent extends Entity {
+export class MazeAgent extends Entity {
 
-  constructor(maze, start, end, strategy = null) {
+  maze: Maze;
+  strategy: Strategy;
+
+  start: { x: number, y: number };
+  end: { x: number, y: number };
+
+  visitArray: Cell[];
+
+  path: Cell[]|null;
+  pathIndex: number;
+
+  constructor(maze: Maze, start: { x: number, y: number }, end: { x: number, y: number }, strategy: Strategy|null = null) {
     super(new Transform(
       start.x * Maze.PointSize + maze.transform.x,
       start.y * Maze.PointSize + maze.transform.y
@@ -107,11 +130,11 @@ class MazeAgent extends Entity {
     });
   }
 
-  visit(c) {
+  visit(c: Cell) {
     this.visitArray.push(c);
   }
 
-  visited(c) {
+  visited(c: { x: number, y: number }) {
     return this.visitArray.some(v => v.x === c.x && v.y === c.y);
   }
 
@@ -121,7 +144,7 @@ class MazeAgent extends Entity {
 
     this.path = [];
 
-    let c = this.visitArray.find(v => v.x === this.end.x && v.y === this.end.y);
+    let c = this.visitArray.find(v => v.x === this.end.x && v.y === this.end.y)!;
 
     this.path.push(c);
 
@@ -159,7 +182,7 @@ class MazeAgent extends Entity {
   }
 
   pathEnded() {
-    return this.pathIndex === this.path.length;
+    return this.pathIndex === this.path!.length;
   }
 
   render() {
@@ -186,5 +209,5 @@ class MazeAgent extends Entity {
     fill(0, 0, 0);
     circle(this.transform.x + Maze.PointSize / 2, this.transform.y + Maze.PointSize / 2, Maze.PointSize / 2);
   }
-
 }
+

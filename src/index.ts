@@ -1,15 +1,21 @@
-let simulation;
-let maze;
-let agent;
+import { Entity, Material, Simulation, Transform } from './objects';
+import { Maze } from './maze';
+import { MazeAgent } from './maze-agent';
+import { DataPoints, Linear, linear, disc } from './datapoints';
+import { NeuralNetwork } from './nn';
+
+let simulation: Simulation;
+let maze: Maze;
+let agent: MazeAgent;
 
 let autoplay = false;
 let totalSteps = 0;
 let currentSteps = 0;
 
-let scene;
-let plotScene;
+let scene: 'maze' | 'plot' | 'nn';
+let plotScene: { dataPoints: DataPoints, linearPlot: Linear };
 
-let nn;
+let nn: NeuralNetwork;
 
 const trainingData = [
   { inputs: [0, 0], outputs: [0], },
@@ -18,8 +24,21 @@ const trainingData = [
   { inputs: [1, 1], outputs: [0], },
 ];
 
-function setup(s = 'nn') {
+declare global {
+  interface Window {
+    setup: any;
+    draw: any;
+    keyReleased: any;
+  }
+}
+
+window.setup = setup;
+window.draw = draw;
+window.keyReleased = keyReleased;
+
+function setup(s: 'maze' | 'plot' | 'nn' = 'nn') {
   scene = s;
+
   simulation = new Simulation();
 
   if (scene === 'maze') {
@@ -53,7 +72,7 @@ function setup(s = 'nn') {
     const error = disc(Math.random() * 10);
     const dataPoints = new DataPoints(approximate, error, 1000, dimensions);
 
-    const linearPlot = new Linear(dataPoints, new Material(color(255, 0, 0)), 0, 0);
+    const linearPlot = new Linear(dataPoints, 0, 0, new Material(color(255, 0, 0)));
 
     simulation.addEntity(dataPoints);
     simulation.addEntity(linearPlot);
@@ -86,6 +105,8 @@ function setup(s = 'nn') {
   }
 }
 
+// p5.js setup function
+// @ts-ignore
 function keyReleased() {
   if (key === ' ')
     autoplay = !autoplay;
@@ -100,6 +121,8 @@ function keyReleased() {
     setup('plot');
 }
 
+// p5.js setup function
+// @ts-ignore
 function draw() {
   simulation.flipY();
   simulation.update();
@@ -141,7 +164,7 @@ function draw() {
   simulation.render();
 }
 
-function gizmo(x, y) {
+export function gizmo(x: number, y: number) {
   const e = new Entity(new Transform(x, y));
 
   e.update = function() {

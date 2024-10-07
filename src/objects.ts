@@ -1,46 +1,65 @@
-class Transform {
+import { Color } from "p5";
 
-  static bottomLeftCenterPoint(w, h) {
+export class Transform {
+
+  x: number;
+  y: number;
+
+  static bottomLeftCenterPoint(w: number, h: number) {
     return new Transform(
       (width - w) / 2,
       (height - h) / 2,
     );
   }
 
-  constructor(x, y) {
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
   }
 
-  equals(transform) {
+  equals(transform: Transform) {
     return this.x === transform.x && this.y === transform.y;
   }
 }
 
-class Entity {
-  constructor(transform) {
+export class Entity {
+
+  transform: Transform;
+
+  constructor(transform: Transform) {
     this.transform = transform;
   }
 
   update() {}
 
-  render() {}
+  render(_simulation: Simulation) {}
 }
 
-class Material {
-  constructor(color) {
+export class Material {
+
+  color: Color;
+
+  constructor(color: Color) {
     this.color = color;
   }
 }
 
-class Shape extends Entity {
-  constructor(transform, material) {
+export class Shape extends Entity {
+
+  material: Material;
+
+  constructor(transform: Transform, material: Material) {
     super(transform);
     this.material = material;
   }
 }
 
-class Simulation {
+export class Simulation {
+
+  entities: Entity[];
+  lastTime: number;
+  running: boolean;
+
   constructor() {
     createCanvas(document.body.clientWidth, document.body.clientHeight);
     this.entities = [];
@@ -53,11 +72,11 @@ class Simulation {
     scale(1, -1);
   }
 
-  addEntity(entity) {
+  addEntity(entity: Entity) {
     this.entities.push(entity);
   }
 
-  removeEntity(entity) {
+  removeEntity(entity: Entity) {
     const index = this.entities.indexOf(entity);
 
     if (index > -1) this.entities.splice(index, 1);
@@ -80,3 +99,4 @@ class Simulation {
     this.entities.forEach(entity => entity.render(this));
   }
 }
+

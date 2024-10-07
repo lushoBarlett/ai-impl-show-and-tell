@@ -1,9 +1,11 @@
-function linear(m, h) {
-  return (x) => m * x + h;
+import { Entity, Material, Shape, Transform } from './objects';
+
+export function linear(m: number, h: number) {
+  return (x: number) => m * x + h;
 }
 
-function disc(r) {
-  return (x, y) => {
+export function disc(r: number) {
+  return (x: number, y: number) => {
     const distance = Math.random() * r;
     const angle = Math.random() * Math.PI * 2;
     return {
@@ -13,9 +15,28 @@ function disc(r) {
   }
 }
 
-class DataPoints extends Entity {
+export class DataPoints extends Entity {
 
-  constructor(approximate, error, pointAmount, { xstart, xend, ystart, yend }) {
+  width: number;
+  height: number;
+
+  approximate: (x: number) => number;
+  error: (x: number, y: number) => { x: number, y: number };
+  pointAmount: number;
+
+  xstart: number;
+  xend: number;
+  ystart: number;
+  yend: number;
+
+  dataPoints: { x: number, y: number }[] = [];
+
+  constructor(
+    approximate: (x: number) => number,
+    error: (x: number, y: number) => { x: number, y: number },
+    pointAmount: number,
+    { xstart, xend, ystart, yend }: { xstart: number, xend: number, ystart: number, yend: number },
+  ) {
     super(Transform.bottomLeftCenterPoint(3 * width / 4, 3 * height / 4));
 
     this.width = 3 * width / 4;
@@ -69,9 +90,14 @@ class DataPoints extends Entity {
   }
 }
 
-class Linear extends Shape {
+export class Linear extends Shape {
 
-  constructor(plot, material, m, h) {
+  m: number;
+  h: number;
+
+  plot: DataPoints;
+
+  constructor(plot: DataPoints, m: number, h: number, material: Material) {
     super(plot.transform, material);
 
     this.m = m;
@@ -94,14 +120,14 @@ class Linear extends Shape {
     return points;
   }
 
-  cost(reducer) {
+  cost(reducer?: (cost: number, point: { x: number, y: number, yhat: number }) => number) {
     reducer = reducer || ((cost, { y, yhat }) => cost + Math.pow(yhat - y, 2));
 
     return this.pointData().reduce(reducer, 0) / this.plot.dataPoints.length;
   }
 
   update() {
-    this.h -= 0.01 * this.cost((cost, { x, y, yhat }) => cost + (yhat - y));
+    this.h -= 0.01 * this.cost((cost, { y, yhat }) => cost + (yhat - y));
     this.m -= 0.00001 * this.cost((cost, { x, y, yhat }) => cost + (yhat - y) * x);
   }
 
@@ -140,10 +166,11 @@ class Linear extends Shape {
   }
 }
 
-function lerpstep(a, b, t) {
+function lerpstep(a: number, b: number, t: number) {
   return a + t * (b - a);
 }
 
-function map(value, start1, stop1, start2, stop2) {
+function map(value: number, start1: number, stop1: number, start2: number, stop2: number) {
   return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
 }
+

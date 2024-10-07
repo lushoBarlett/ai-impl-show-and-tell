@@ -1,4 +1,17 @@
-class Neuron {
+import { Entity, Simulation, Transform } from "./objects";
+
+export class Neuron {
+
+  bias: number;
+  activation: number;
+  inputSum: number;
+  outputConnections: Connection[];
+  delta: number;
+
+  x: number|undefined;
+  y: number|undefined;
+  r: number|undefined;
+
   constructor(bias = Math.random()) {
     this.bias = bias;
     this.activation = 0;
@@ -15,11 +28,11 @@ class Neuron {
     return this.activation * (1 - this.activation);
   }
 
-  addInput(value) {
+  addInput(value: number) {
     this.inputSum += value;
   }
 
-  addConnection(connection) {
+  addConnection(connection: Connection) {
     this.outputConnections.push(connection);
   }
 
@@ -27,33 +40,38 @@ class Neuron {
     this.inputSum = 0;
   }
 
-  setRenderParameters(x, y, r) {
+  setRenderParameters(x: number, y: number, r: number) {
     this.x = x;
     this.y = y;
     this.r = r;
   }
 
-  render(simulation) {
+  render(simulation: Simulation) {
     push();
 
     fill(255);
     stroke(0);
     strokeWeight(1);
-    ellipse(this.x, this.y, this.r, this.r);
+    ellipse(this.x!, this.y!, this.r!, this.r!);
 
     simulation.flipY();
     fill(0);
     textSize(16);
     textAlign(CENTER, CENTER);
-    text("A: " + this.activation.toFixed(2), this.x, height - this.y - 8);
-    text("B: " + this.bias.toFixed(2), this.x, height - this.y + 8);
+    text("A: " + this.activation.toFixed(2), this.x!, height - this.y! - 8);
+    text("B: " + this.bias.toFixed(2), this.x!, height - this.y! + 8);
 
     pop();
   }
 }
 
-class Connection {
-  constructor(fromNeuron, toNeuron, weight = (5 - Math.random() * 10)) {
+export class Connection {
+
+  fromNeuron: Neuron;
+  toNeuron: Neuron;
+  weight: number;
+
+  constructor(fromNeuron: Neuron, toNeuron: Neuron, weight: number = (5 - Math.random() * 10)) {
     this.fromNeuron = fromNeuron;
     this.toNeuron = toNeuron;
     this.weight = weight;
@@ -64,7 +82,7 @@ class Connection {
     this.toNeuron.addInput(weightedValue);
   }
 
-  updateWeight(learningRate) {
+  updateWeight(learningRate: number) {
     const gradient = this.toNeuron.delta * this.fromNeuron.activation;
     this.weight += learningRate * gradient;
   }
@@ -77,17 +95,20 @@ class Connection {
 
     strokeWeight(Math.log2(Math.abs(this.weight)) - 1);
     stroke(this.weight > 0 ? color(0, 255, 0) : color(255, 0, 0));
-    line(fromX, fromY, toX, toY);
+    line(fromX!, fromY!, toX!, toY!);
   }
 }
 
-class Layer {
-  constructor(size) {
+export class Layer {
+
+  neurons: Neuron[];
+
+  constructor(size: number) {
     this.neurons = [];
     for (let i = 0; i < size; i++) this.neurons.push(new Neuron());
   }
 
-  connectTo(layer) {
+  connectTo(layer: Layer) {
     for (let fromNeuron of this.neurons) {
       for (let toNeuron of layer.neurons) {
         const connection = new Connection(fromNeuron, toNeuron);
@@ -106,38 +127,42 @@ class Layer {
     this.neurons.forEach(neuron => neuron.resetInput());
   }
 
-  calculateOutputLayerDeltas(targets) {
+  calculateOutputLayerDeltas(targets: number[]) {
     this.neurons.forEach((neuron, i) => {
       const error = neuron.activation - targets[i];
       neuron.delta = error * neuron.derivative();
     });
   }
 
-  calculateHiddenLayerDeltas(nextLayer) {
+  calculateHiddenLayerDeltas(nextLayer: Layer) {
     this.neurons.forEach(neuron => {
       let sumDeltas = 0;
       nextLayer.neurons.forEach(nextNeuron => {
-        const connection = neuron.outputConnections.find(conn => conn.toNeuron === nextNeuron);
+        const connection = neuron.outputConnections.find(conn => conn.toNeuron === nextNeuron)!;
         sumDeltas += nextNeuron.delta * connection.weight;
       });
       neuron.delta = sumDeltas * neuron.derivative();
     });
   }
 
-  updateWeights(learningRate) {
+  updateWeights(learningRate: number) {
     this.neurons.forEach(neuron => {
       neuron.outputConnections.forEach(connection => connection.updateWeight(learningRate));
     });
   }
 }
 
-class NeuralNetwork extends Entity {
+export class NeuralNetwork extends Entity {
 
   static NeuronRadius = 20;
   static NeuronGap = 20;
   static LayerGap = 200;
 
-  constructor(layerSizes) {
+  layers: Layer[];
+  input: number[]|undefined;
+  target: number[]|undefined;
+
+  constructor(layerSizes: number[]) {
     super(Transform.bottomLeftCenterPoint(
       (layerSizes.length - 1) * NeuralNetwork.LayerGap + NeuralNetwork.NeuronRadius * 2,
       Math.max(...layerSizes) * NeuralNetwork.NeuronGap
@@ -152,7 +177,7 @@ class NeuralNetwork extends Entity {
       this.layers[i].connectTo(this.layers[i + 1]);
   }
 
-  feedForward(input) {
+  feedForward(input: number[]) {
     this.layers[0].neurons.forEach((neuron, i) => {
       neuron.activation = input[i];
     });
@@ -175,7 +200,7 @@ class NeuralNetwork extends Entity {
     return this.layers[this.layers.length - 1].neurons.map(neuron => neuron.activation);
   }
 
-  backpropagate(targets, learningRate) {
+  backpropagate(targets: number[], learningRate: number) {
     const outputLayerIndex = this.layers.length - 1;
 
     this.layers[outputLayerIndex].calculateOutputLayerDeltas(targets);
@@ -187,14 +212,14 @@ class NeuralNetwork extends Entity {
       this.layers[i].updateWeights(learningRate);
   }
 
-  train(input, target, learningRate = 0.1) {
+  train(input: number[], target: number[], learningRate: number) {
     this.input = input;
     this.target = target;
     this.feedForward(input);
     this.backpropagate(target, learningRate);
   }
 
-  render(simulation) {
+  render(simulation: Simulation) {
     this.layers.forEach((layer, i) => {
       layer.neurons.forEach((neuron, j) => {
         neuron.setRenderParameters(
@@ -206,7 +231,7 @@ class NeuralNetwork extends Entity {
     });
 
     for (let i = 0; i < this.layers.length - 1; i++) {
-      this.layers[i].neurons.forEach((neuron, j) => {
+      this.layers[i].neurons.forEach(neuron => {
         neuron.outputConnections.forEach(connection => {
           connection.render();
         });
@@ -223,7 +248,7 @@ class NeuralNetwork extends Entity {
 
     // render input data like it is a layer at the left of the layer0
     this.layers[0].neurons.forEach((neuron, i) => {
-      const input = this.input[i];
+      const input = this.input![i];
       push();
       fill(0);
       stroke(0);
@@ -231,13 +256,13 @@ class NeuralNetwork extends Entity {
       textSize(16);
       textAlign(CENTER, CENTER);
       simulation.flipY();
-      text(input.toFixed(2), neuron.x - NeuralNetwork.LayerGap, height - neuron.y);
+      text(input.toFixed(2), neuron.x! - NeuralNetwork.LayerGap, height - neuron.y!);
       pop();
     });
 
     // render target data like it is a layer at the right of the last layer
     this.layers[this.layers.length - 1].neurons.forEach((neuron, i) => {
-      const target = this.target[i];
+      const target = this.target![i];
       push();
       fill(0);
       stroke(0);
@@ -245,8 +270,9 @@ class NeuralNetwork extends Entity {
       textSize(16);
       textAlign(CENTER, CENTER);
       simulation.flipY();
-      text(target.toFixed(2), neuron.x + NeuralNetwork.LayerGap, height - neuron.y);
+      text(target.toFixed(2), neuron.x! + NeuralNetwork.LayerGap, height - neuron.y!);
       pop();
     });
   }
 }
+
